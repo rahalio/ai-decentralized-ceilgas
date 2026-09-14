@@ -1,0 +1,561 @@
+openapi: 3.0.3
+info:
+  title: Ceilgas
+  version: 0.1.0
+  description: >-
+    Sound gas upper-bound analyser and certification API for Ethereum public functions.
+  x-product-slug: ai-decentralized-ceilgas
+  x-source: ai-in-decentralized+ai/research-paper_1811.10403v1/
+servers:
+  - url: https://api.example.com
+tags:
+  - name: Builds
+    description: Contract builds and CFG analysis
+  - name: Functions
+    description: Public functions and size metrics
+  - name: Bounds
+    description: Opcode and memory gas bounds
+  - name: Certificates
+    description: Gas certificates
+  - name: Recommendations
+    description: Limit recommendations under assumptions
+  - name: Monitors
+    description: Assumption breach monitors
+
+paths:
+  /v1/builds:
+    get:
+      operationId: listBuilds
+      tags: [Builds]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Builds page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeContractBuild" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+    post:
+      operationId: submitBuild
+      tags: [Builds]
+      security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContractBuildCreate" }
+      responses:
+        "202":
+          description: Build accepted for analysis
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeContractBuild" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /v1/builds/{buildId}:
+    parameters:
+      - name: buildId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getBuild
+      tags: [Builds]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Build
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeContractBuild" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/builds/{buildId}/functions:
+    parameters:
+      - name: buildId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listFunctions
+      tags: [Functions]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Functions page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopePublicFunction" }
+  /v1/functions/{functionId}:
+    parameters:
+      - name: functionId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getFunction
+      tags: [Functions]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Public function
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopePublicFunction" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/functions/{functionId}/bounds:
+    parameters:
+      - name: functionId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getFunctionBounds
+      tags: [Bounds]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Gas bounds for function
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeGasBound" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/bounds:
+    get:
+      operationId: listBounds
+      tags: [Bounds]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+        - name: buildId
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: Bounds page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeGasBound" }
+  /v1/certificates:
+    get:
+      operationId: listGasCertificates
+      tags: [Certificates]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Certificates page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeGasCertificate" }
+    post:
+      operationId: issueGasCertificate
+      tags: [Certificates]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/GasCertificateCreate" }
+      responses:
+        "201":
+          description: Certificate issued
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeGasCertificate" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+  /v1/certificates/{certificateId}:
+    parameters:
+      - name: certificateId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: getGasCertificate
+      tags: [Certificates]
+      security: [{ BearerAuth: [] }, { ApiKeyAuth: [] }]
+      responses:
+        "200":
+          description: Certificate
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeGasCertificate" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /v1/recommendations:
+    post:
+      operationId: createLimitRecommendation
+      tags: [Recommendations]
+      security: [{ ApiKeyAuth: [] }, { BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/LimitRecommendationCreate" }
+      responses:
+        "200":
+          description: Recommendation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeLimitRecommendation" }
+        "400": { $ref: "#/components/responses/BadRequest" }
+    get:
+      operationId: listLimitRecommendations
+      tags: [Recommendations]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Recommendations page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeLimitRecommendation" }
+  /v1/monitors:
+    get:
+      operationId: listMonitors
+      tags: [Monitors]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Monitors page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeAssumptionMonitor" }
+    post:
+      operationId: createMonitor
+      tags: [Monitors]
+      security: [{ BearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AssumptionMonitorCreate" }
+      responses:
+        "201":
+          description: Monitor created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DataEnvelopeAssumptionMonitor" }
+  /v1/monitors/{monitorId}/alerts:
+    parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema: { type: string }
+    get:
+      operationId: listMonitorAlerts
+      tags: [Monitors]
+      security: [{ BearerAuth: [] }]
+      parameters:
+        - $ref: "#/components/parameters/Cursor"
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Alerts page
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEnvelopeMonitorAlert" }
+
+components:
+  securitySchemes:
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Cursor:
+      name: cursor
+      in: query
+      schema: { type: string }
+    Limit:
+      name: limit
+      in: query
+      schema: { type: integer, minimum: 1, maximum: 100, default: 25 }
+  responses:
+    Unauthorized:
+      description: Unauthorized
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    BadRequest:
+      description: Bad request
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+    NotFound:
+      description: Not found
+      content:
+        application/problem+json:
+          schema: { $ref: "#/components/schemas/Problem" }
+  schemas:
+    ResponseMeta:
+      type: object
+      required: [requestId, timestamp]
+      properties:
+        requestId: { type: string }
+        timestamp: { type: string, format: date-time }
+    Problem:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+
+    ContractBuild:
+      type: object
+      required: [id, bytecodeHash, status]
+      properties:
+        id: { type: string }
+        bytecodeHash: { type: string }
+        sourceLanguage: { type: string, enum: [solidity, vyper, evm] }
+        status: { type: string, enum: [queued, analysing, completed, failed] }
+        cfgComplete: { type: boolean }
+        analyserVersion: { type: string }
+        gasScheduleVersion: { type: string }
+    ContractBuildCreate:
+      type: object
+      required: [bytecodeHex]
+      properties:
+        bytecodeHex: { type: string }
+        soliditySource: { type: string }
+        sourceLanguage: { type: string, enum: [solidity, vyper, evm], default: solidity }
+    PublicFunction:
+      type: object
+      required: [id, buildId, name]
+      properties:
+        id: { type: string }
+        buildId: { type: string }
+        name: { type: string }
+        isConstantGas: { type: boolean }
+        sizeMetrics:
+          type: array
+          items: { type: string }
+    GasBound:
+      type: object
+      required: [id, functionId, status]
+      properties:
+        id: { type: string }
+        functionId: { type: string }
+        status: { type: string, enum: [proven, incomplete] }
+        opcodeBoundFormula: { type: string }
+        memoryBoundFormula: { type: string }
+        incompletenessClass:
+          type: string
+          enum: [none, maximization, ranking_function, cover_point, timeout]
+    GasCertificate:
+      type: object
+      required: [id, buildId, status]
+      properties:
+        id: { type: string }
+        buildId: { type: string }
+        analyserVersion: { type: string }
+        gasScheduleVersion: { type: string }
+        status: { type: string, enum: [certified, partial, refused] }
+        issuedAt: { type: string, format: date-time }
+    GasCertificateCreate:
+      type: object
+      required: [buildId]
+      properties:
+        buildId: { type: string }
+        failClosed: { type: boolean, default: true }
+    LimitRecommendation:
+      type: object
+      required: [id, functionId, recommendedGasLimit]
+      properties:
+        id: { type: string }
+        functionId: { type: string }
+        recommendedGasLimit: { type: integer }
+        assumptions:
+          type: object
+          additionalProperties: { type: number }
+        sound: { type: boolean }
+    LimitRecommendationCreate:
+      type: object
+      required: [functionId, assumptions]
+      properties:
+        functionId: { type: string }
+        assumptions:
+          type: object
+          additionalProperties: { type: number }
+        callbackContext: { type: boolean, default: false }
+    AssumptionMonitor:
+      type: object
+      required: [id, certificateId, status]
+      properties:
+        id: { type: string }
+        certificateId: { type: string }
+        metricName: { type: string }
+        threshold: { type: number }
+        status: { type: string, enum: [active, paused, breached] }
+    AssumptionMonitorCreate:
+      type: object
+      required: [certificateId, metricName, threshold]
+      properties:
+        certificateId: { type: string }
+        metricName: { type: string }
+        threshold: { type: number }
+    MonitorAlert:
+      type: object
+      required: [id, monitorId, observedValue]
+      properties:
+        id: { type: string }
+        monitorId: { type: string }
+        observedValue: { type: number }
+        createdAt: { type: string, format: date-time }
+
+    DataEnvelopeContractBuild:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/ContractBuild" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeContractBuild:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/ContractBuild" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DataEnvelopePublicFunction:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/PublicFunction" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopePublicFunction:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/PublicFunction" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DataEnvelopeGasBound:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/GasBound" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeGasBound:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/GasBound" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DataEnvelopeGasCertificate:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/GasCertificate" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeGasCertificate:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/GasCertificate" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DataEnvelopeLimitRecommendation:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/LimitRecommendation" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeLimitRecommendation:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/LimitRecommendation" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DataEnvelopeAssumptionMonitor:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/AssumptionMonitor" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeAssumptionMonitor:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/AssumptionMonitor" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+
+    DataEnvelopeMonitorAlert:
+      type: object
+      required: [data, meta]
+      properties:
+        data: { $ref: "#/components/schemas/MonitorAlert" }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
+    ListEnvelopeMonitorAlert:
+      type: object
+      required: [data, meta]
+      properties:
+        data:
+          type: object
+          required: [items]
+          properties:
+            items:
+              type: array
+              items: { $ref: "#/components/schemas/MonitorAlert" }
+            nextCursor: { type: string }
+        meta: { $ref: "#/components/schemas/ResponseMeta" }
