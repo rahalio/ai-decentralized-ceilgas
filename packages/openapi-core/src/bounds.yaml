@@ -1,0 +1,79 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Bounds API
+  version: 0.1.0
+  description: |
+    Sound opcode and memory gas upper bounds, or explicit incompleteness classes.
+    Certification refuses safe-to-send on dont_know / ranking_function / cover_point / maximization / timeout.
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: bnd
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+security:
+  - apiKey: []
+tags:
+  - name: Bounds
+    description: Opcode and memory gas bounds
+paths:
+  /v1/functions/{functionId}/bounds:
+    parameters:
+      - name: functionId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+    get:
+      operationId: getFunctionBounds
+      tags: [Bounds]
+      summary: Get gas bounds for a function
+      responses:
+        '200':
+          description: Gas bounds for function
+          content:
+            application/json:
+              schema:
+                $ref: ./bounds.schemas.yaml#/components/schemas/GasBoundResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/bounds:
+    get:
+      operationId: listBounds
+      tags: [Bounds]
+      summary: List gas bounds (optionally filter by build)
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: buildId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/BuildId
+        - name: incompletenessOnly
+          in: query
+          description: When true, return only incomplete bounds (incompleteness register).
+          schema:
+            type: boolean
+            default: false
+      responses:
+        '200':
+          description: Bounds page
+          content:
+            application/json:
+              schema:
+                $ref: ./bounds.schemas.yaml#/components/schemas/GasBoundListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

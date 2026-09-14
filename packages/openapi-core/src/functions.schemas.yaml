@@ -1,0 +1,74 @@
+openapi: 3.1.0
+info:
+  title: Functions schemas
+  version: 0.1.0
+  description: Public functions and declared size metrics.
+paths: {}
+components:
+  schemas:
+    SizeMetric:
+      type: object
+      required: [name, kind]
+      properties:
+        name:
+          type: string
+          description: Metric identifier (e.g. slots.length, calldata.n).
+        kind:
+          type: string
+          enum: [input, storage, chain]
+        description:
+          type: string
+
+    PublicFunction:
+      type: object
+      required: [id, buildId, name]
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+        buildId:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+        name:
+          type: string
+          description: Solidity/Vyper public function or entrypoint name.
+        selector:
+          type: string
+          description: 4-byte function selector hex when known.
+        isConstantGas:
+          type: boolean
+          description: False when gas depends on stored data, inputs, or chain state (BR-8).
+        sizeMetrics:
+          type: array
+          items:
+            $ref: '#/components/schemas/SizeMetric'
+        analysisStatus:
+          type: string
+          enum: [pending, proven, incomplete, failed]
+
+    PublicFunctionListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PublicFunction'
+        nextCursor:
+          type: string
+
+    PublicFunctionResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PublicFunction'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    PublicFunctionListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/PublicFunctionListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

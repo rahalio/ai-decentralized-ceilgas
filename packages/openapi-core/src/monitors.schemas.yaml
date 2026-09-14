@@ -1,0 +1,111 @@
+openapi: 3.1.0
+info:
+  title: Monitors schemas
+  version: 0.1.0
+  description: Assumption monitors and breach alerts.
+paths: {}
+components:
+  schemas:
+    MonitorStatus:
+      type: string
+      enum: [active, paused, breached]
+
+    AssumptionMonitor:
+      type: object
+      required: [id, certificateId, metricName, threshold, status]
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/MonitorId
+        certificateId:
+          $ref: ./common/primitives.yaml#/components/schemas/CertificateId
+        metricName:
+          type: string
+        threshold:
+          type: number
+        status:
+          $ref: '#/components/schemas/MonitorStatus'
+        lastObservedValue:
+          type: number
+        proximityRatio:
+          type: number
+          description: observed / threshold (1.0 = at breach).
+        createdAt:
+          type: string
+          format: date-time
+
+    AssumptionMonitorCreate:
+      type: object
+      required: [certificateId, metricName, threshold]
+      properties:
+        certificateId:
+          $ref: ./common/primitives.yaml#/components/schemas/CertificateId
+        metricName:
+          type: string
+        threshold:
+          type: number
+
+    MonitorAlert:
+      type: object
+      required: [id, monitorId, observedValue, createdAt]
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/AlertId
+        monitorId:
+          $ref: ./common/primitives.yaml#/components/schemas/MonitorId
+        observedValue:
+          type: number
+        acknowledged:
+          type: boolean
+          default: false
+        createdAt:
+          type: string
+          format: date-time
+
+    AssumptionMonitorListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssumptionMonitor'
+        nextCursor:
+          type: string
+
+    MonitorAlertListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MonitorAlert'
+        nextCursor:
+          type: string
+
+    AssumptionMonitorResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AssumptionMonitor'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    AssumptionMonitorListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/AssumptionMonitorListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    MonitorAlertListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/MonitorAlertListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

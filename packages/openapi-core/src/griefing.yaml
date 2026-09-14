@@ -1,0 +1,73 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Griefing API
+  version: 0.1.0
+  description: |
+    Adversarial griefing-cost estimates — labelled and role-gated (BR-11).
+    Unauthorised callers receive 403; values must not leak via soft-hidden URLs.
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: grf
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+security:
+  - apiKey: []
+tags:
+  - name: Griefing
+    description: Role-gated adversarial analytics
+paths:
+  /v1/griefing/estimates:
+    get:
+      operationId: listGriefingEstimates
+      tags: [Griefing]
+      summary: List griefing estimates (authorised roles only)
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Estimates page
+          content:
+            application/json:
+              schema:
+                $ref: ./griefing.schemas.yaml#/components/schemas/GriefingEstimateListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common/responses.yaml#/components/responses/Forbidden
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createGriefingEstimate
+      tags: [Griefing]
+      summary: Run a griefing-cost estimate (authorised roles only)
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./griefing.schemas.yaml#/components/schemas/GriefingEstimateCreate
+      responses:
+        '201':
+          description: Estimate created
+          content:
+            application/json:
+              schema:
+                $ref: ./griefing.schemas.yaml#/components/schemas/GriefingEstimateResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ./common/responses.yaml#/components/responses/Forbidden
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

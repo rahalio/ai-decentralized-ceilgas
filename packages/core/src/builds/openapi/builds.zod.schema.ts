@@ -1,0 +1,415 @@
+import { makeApi, Zodios, type ZodiosOptions } from '@zodios/core';
+import { z } from 'zod';
+
+const submitBuild_Body = z
+  .object({
+    bytecodeHex: z.string().min(2),
+    soliditySource: z.string().optional(),
+    sourceLanguage: z
+      .enum(['solidity', 'vyper', 'evm'])
+      .optional()
+      .default('solidity'),
+    analyserVersion: z.string().optional(),
+    gasScheduleVersion: z.string().optional(),
+  })
+  .passthrough();
+const Problem = z
+  .object({
+    type: z.string().url(),
+    title: z.string(),
+    status: z.number().int(),
+    detail: z.string(),
+    instance: z.string().url(),
+    code: z.string(),
+  })
+  .partial()
+  .passthrough();
+const BuildId = z.string();
+const SourceLanguage = z.enum(['solidity', 'vyper', 'evm']);
+const BuildStatus = z.enum(['queued', 'analysing', 'completed', 'failed']);
+const ContractBuild = z
+  .object({
+    id: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+    bytecodeHash: z.string(),
+    sourceLanguage: z.enum(['solidity', 'vyper', 'evm']).optional(),
+    status: z.enum(['queued', 'analysing', 'completed', 'failed']),
+    cfgComplete: z.boolean().optional(),
+    analyserVersion: z.string().optional(),
+    gasScheduleVersion: z.string().optional(),
+    progressPercent: z.number().int().gte(0).lte(100).optional(),
+    failureReason: z.string().optional(),
+    createdAt: z.string().datetime({ offset: true }),
+    completedAt: z.string().datetime({ offset: true }).optional(),
+  })
+  .passthrough();
+const ContractBuildListData = z
+  .object({
+    items: z.array(
+      z
+        .object({
+          id: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+          bytecodeHash: z.string(),
+          sourceLanguage: z.enum(['solidity', 'vyper', 'evm']).optional(),
+          status: z.enum(['queued', 'analysing', 'completed', 'failed']),
+          cfgComplete: z.boolean().optional(),
+          analyserVersion: z.string().optional(),
+          gasScheduleVersion: z.string().optional(),
+          progressPercent: z.number().int().gte(0).lte(100).optional(),
+          failureReason: z.string().optional(),
+          createdAt: z.string().datetime({ offset: true }),
+          completedAt: z.string().datetime({ offset: true }).optional(),
+        })
+        .passthrough()
+    ),
+    nextCursor: z.string().optional(),
+  })
+  .passthrough();
+const ResponseMeta = z
+  .object({
+    requestId: z.string().uuid(),
+    correlationId: z.string(),
+    generatedAt: z.string().datetime({ offset: true }),
+  })
+  .partial()
+  .passthrough();
+const ContractBuildListResponse = z
+  .object({
+    data: z
+      .object({
+        items: z.array(
+          z
+            .object({
+              id: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+              bytecodeHash: z.string(),
+              sourceLanguage: z.enum(['solidity', 'vyper', 'evm']).optional(),
+              status: z.enum(['queued', 'analysing', 'completed', 'failed']),
+              cfgComplete: z.boolean().optional(),
+              analyserVersion: z.string().optional(),
+              gasScheduleVersion: z.string().optional(),
+              progressPercent: z.number().int().gte(0).lte(100).optional(),
+              failureReason: z.string().optional(),
+              createdAt: z.string().datetime({ offset: true }),
+              completedAt: z.string().datetime({ offset: true }).optional(),
+            })
+            .passthrough()
+        ),
+        nextCursor: z.string().optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+const ContractBuildCreate = z
+  .object({
+    bytecodeHex: z.string().min(2),
+    soliditySource: z.string().optional(),
+    sourceLanguage: z
+      .enum(['solidity', 'vyper', 'evm'])
+      .optional()
+      .default('solidity'),
+    analyserVersion: z.string().optional(),
+    gasScheduleVersion: z.string().optional(),
+  })
+  .passthrough();
+const ContractBuildResponse = z
+  .object({
+    data: z
+      .object({
+        id: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+        bytecodeHash: z.string(),
+        sourceLanguage: z.enum(['solidity', 'vyper', 'evm']).optional(),
+        status: z.enum(['queued', 'analysing', 'completed', 'failed']),
+        cfgComplete: z.boolean().optional(),
+        analyserVersion: z.string().optional(),
+        gasScheduleVersion: z.string().optional(),
+        progressPercent: z.number().int().gte(0).lte(100).optional(),
+        failureReason: z.string().optional(),
+        createdAt: z.string().datetime({ offset: true }),
+        completedAt: z.string().datetime({ offset: true }).optional(),
+      })
+      .passthrough(),
+    meta: z
+      .object({
+        requestId: z.string().uuid(),
+        correlationId: z.string(),
+        generatedAt: z.string().datetime({ offset: true }),
+      })
+      .partial()
+      .passthrough()
+      .optional(),
+  })
+  .passthrough();
+
+export const schemas: any = {
+  submitBuild_Body,
+  Problem,
+  BuildId,
+  SourceLanguage,
+  BuildStatus,
+  ContractBuild,
+  ContractBuildListData,
+  ResponseMeta,
+  ContractBuildListResponse,
+  ContractBuildCreate,
+  ContractBuildResponse,
+};
+
+const endpoints = makeApi([
+  {
+    method: 'get',
+    path: '/v1/builds',
+    alias: 'listBuilds',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'cursor',
+        type: 'Query',
+        schema: z.string().optional(),
+      },
+      {
+        name: 'limit',
+        type: 'Query',
+        schema: z.number().int().gte(1).lte(100).optional().default(25),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            items: z.array(
+              z
+                .object({
+                  id: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+                  bytecodeHash: z.string(),
+                  sourceLanguage: z
+                    .enum(['solidity', 'vyper', 'evm'])
+                    .optional(),
+                  status: z.enum([
+                    'queued',
+                    'analysing',
+                    'completed',
+                    'failed',
+                  ]),
+                  cfgComplete: z.boolean().optional(),
+                  analyserVersion: z.string().optional(),
+                  gasScheduleVersion: z.string().optional(),
+                  progressPercent: z.number().int().gte(0).lte(100).optional(),
+                  failureReason: z.string().optional(),
+                  createdAt: z.string().datetime({ offset: true }),
+                  completedAt: z.string().datetime({ offset: true }).optional(),
+                })
+                .passthrough()
+            ),
+            nextCursor: z.string().optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'post',
+    path: '/v1/builds',
+    alias: 'submitBuild',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'body',
+        type: 'Body',
+        schema: submitBuild_Body,
+      },
+      {
+        name: 'Idempotency-Key',
+        type: 'Header',
+        schema: z.string().min(1).max(128),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+            bytecodeHash: z.string(),
+            sourceLanguage: z.enum(['solidity', 'vyper', 'evm']).optional(),
+            status: z.enum(['queued', 'analysing', 'completed', 'failed']),
+            cfgComplete: z.boolean().optional(),
+            analyserVersion: z.string().optional(),
+            gasScheduleVersion: z.string().optional(),
+            progressPercent: z.number().int().gte(0).lte(100).optional(),
+            failureReason: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            completedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 400,
+        description: `Malformed request`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 409,
+        description: `Idempotency key reuse with different body, or state conflict`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+  {
+    method: 'get',
+    path: '/v1/builds/:buildId',
+    alias: 'getBuild',
+    requestFormat: 'json',
+    parameters: [
+      {
+        name: 'buildId',
+        type: 'Path',
+        schema: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+      },
+    ],
+    response: z
+      .object({
+        data: z
+          .object({
+            id: z.string().regex(/^bld_[0-9A-HJKMNP-TV-Z]{26}$/),
+            bytecodeHash: z.string(),
+            sourceLanguage: z.enum(['solidity', 'vyper', 'evm']).optional(),
+            status: z.enum(['queued', 'analysing', 'completed', 'failed']),
+            cfgComplete: z.boolean().optional(),
+            analyserVersion: z.string().optional(),
+            gasScheduleVersion: z.string().optional(),
+            progressPercent: z.number().int().gte(0).lte(100).optional(),
+            failureReason: z.string().optional(),
+            createdAt: z.string().datetime({ offset: true }),
+            completedAt: z.string().datetime({ offset: true }).optional(),
+          })
+          .passthrough(),
+        meta: z
+          .object({
+            requestId: z.string().uuid(),
+            correlationId: z.string(),
+            generatedAt: z.string().datetime({ offset: true }),
+          })
+          .partial()
+          .passthrough()
+          .optional(),
+      })
+      .passthrough(),
+    errors: [
+      {
+        status: 401,
+        description: `Missing or invalid API key`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+      {
+        status: 404,
+        description: `Resource not found`,
+        schema: z
+          .object({
+            type: z.string().url(),
+            title: z.string(),
+            status: z.number().int(),
+            detail: z.string(),
+            instance: z.string().url(),
+            code: z.string(),
+          })
+          .partial()
+          .passthrough(),
+      },
+    ],
+  },
+]);
+
+export const api: any = new Zodios('https://api.ceilgas.local/v1', endpoints);
+
+export function createApiClient(baseUrl: string, options?: ZodiosOptions): any {
+  return new Zodios(baseUrl, endpoints, options);
+}

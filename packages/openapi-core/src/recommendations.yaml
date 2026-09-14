@@ -1,0 +1,75 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Recommendations API
+  version: 0.1.0
+  description: |
+    Evaluate certified bounds under size assumptions S.
+    Supports oracle/callback stipend provisioning via callbackContext (BR-5, BR-6).
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: rec
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+security:
+  - apiKey: []
+tags:
+  - name: Recommendations
+    description: Limit recommendations under assumptions
+paths:
+  /v1/recommendations:
+    get:
+      operationId: listLimitRecommendations
+      tags: [Recommendations]
+      summary: List limit recommendations
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: functionId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+      responses:
+        '200':
+          description: Recommendations page
+          content:
+            application/json:
+              schema:
+                $ref: ./recommendations.schemas.yaml#/components/schemas/LimitRecommendationListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createLimitRecommendation
+      tags: [Recommendations]
+      summary: Create a limit recommendation under assumptions
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./recommendations.schemas.yaml#/components/schemas/LimitRecommendationCreate
+      responses:
+        '200':
+          description: Recommendation
+          content:
+            application/json:
+              schema:
+                $ref: ./recommendations.schemas.yaml#/components/schemas/LimitRecommendationResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

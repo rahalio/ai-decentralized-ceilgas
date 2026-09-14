@@ -1,0 +1,99 @@
+openapi: 3.1.0
+info:
+  title: Builds schemas
+  version: 0.1.0
+  description: Contract builds and CFG analysis artefacts.
+paths: {}
+components:
+  schemas:
+    SourceLanguage:
+      type: string
+      enum: [solidity, vyper, evm]
+
+    BuildStatus:
+      type: string
+      enum: [queued, analysing, completed, failed]
+
+    ContractBuild:
+      type: object
+      required: [id, bytecodeHash, status, createdAt]
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+        bytecodeHash:
+          type: string
+          description: Keccak-256 (or SHA-256) hash of analysed bytecode.
+        sourceLanguage:
+          $ref: '#/components/schemas/SourceLanguage'
+        status:
+          $ref: '#/components/schemas/BuildStatus'
+        cfgComplete:
+          type: boolean
+          description: Whether CFG generation completed for all entrypoints.
+        analyserVersion:
+          type: string
+          description: Pinned analyser toolchain version.
+        gasScheduleVersion:
+          type: string
+          description: EVM gas-schedule version used for cost model.
+        progressPercent:
+          type: integer
+          minimum: 0
+          maximum: 100
+        failureReason:
+          type: string
+          description: Present when status is failed (e.g. CFG failure).
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+
+    ContractBuildCreate:
+      type: object
+      required: [bytecodeHex]
+      properties:
+        bytecodeHex:
+          type: string
+          minLength: 2
+          description: Hex-encoded runtime or creation bytecode.
+        soliditySource:
+          type: string
+          description: Optional Solidity source for display / debug.
+        sourceLanguage:
+          $ref: '#/components/schemas/SourceLanguage'
+          default: solidity
+        analyserVersion:
+          type: string
+        gasScheduleVersion:
+          type: string
+
+    ContractBuildListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContractBuild'
+        nextCursor:
+          type: string
+
+    ContractBuildResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContractBuild'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    ContractBuildListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/ContractBuildListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

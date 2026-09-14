@@ -1,0 +1,13 @@
+---
+description: Never commit or push .codegen; keep zero-codegen local-only
+alwaysApply: true
+---
+
+# Ceilgas — `.codegen` must stay local
+
+- **Never commit, stage, or push** the `.codegen/` directory (or nested `zero_codegen` tool trees) to GitHub.
+- Obtain / sync the codegen tool from the scaffold repo locally when needed:
+  `/Users/nrahal/@code/zero-apps/zero-apps-codegen-scaffold/.codegen`
+- `.codegen/` is listed in `.gitignore` as a safeguard — do not remove that entry.
+- Bundled OpenAPI under `packages/openapi-core/src/.bundled/` is also gitignored; regenerate with `pnpm bundle:openapi`.
+- Package scope for this product is `@ceilgas/*` (not `@ddd`).

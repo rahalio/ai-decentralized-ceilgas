@@ -1,0 +1,129 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Policies API
+  version: 0.1.0
+  description: |
+    CI policy gates — fail on non-constant gas without exception; refuse certification on incompleteness.
+    Distinguishes certification mode from optimisation hints (BR-8, BR-10).
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: pol
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+security:
+  - apiKey: []
+tags:
+  - name: Policies
+    description: CI policy gates
+paths:
+  /v1/policies:
+    get:
+      operationId: listCiPolicies
+      tags: [Policies]
+      summary: List CI policies
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Policies page
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/CiPolicyListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: upsertCiPolicy
+      tags: [Policies]
+      summary: Create or update a CI policy
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./policies.schemas.yaml#/components/schemas/CiPolicyUpsert
+      responses:
+        '200':
+          description: Policy saved
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/CiPolicyResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/policies/{policyId}:
+    parameters:
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/PolicyId
+    get:
+      operationId: getCiPolicy
+      tags: [Policies]
+      summary: Get a CI policy
+      responses:
+        '200':
+          description: Policy
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/CiPolicyResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/policies/{policyId}/evaluate:
+    parameters:
+      - name: policyId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/PolicyId
+    post:
+      operationId: evaluateCiPolicy
+      tags: [Policies]
+      summary: Evaluate CI policy against a build
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [buildId]
+              properties:
+                buildId:
+                  $ref: ./common/primitives.yaml#/components/schemas/BuildId
+      responses:
+        '200':
+          description: Gate result
+          content:
+            application/json:
+              schema:
+                $ref: ./policies.schemas.yaml#/components/schemas/CiPolicyGateResultResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

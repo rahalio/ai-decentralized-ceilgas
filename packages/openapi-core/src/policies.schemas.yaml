@@ -1,0 +1,121 @@
+openapi: 3.1.0
+info:
+  title: Policies schemas
+  version: 0.1.0
+  description: CI policy gates for non-constant gas and fail-closed incompleteness.
+paths: {}
+components:
+  schemas:
+    PolicyMode:
+      type: string
+      enum: [certification, optimisation_hints]
+      description: Certification must not be conflated with optimisation (BR-10).
+
+    NonConstantSeverity:
+      type: string
+      enum: [info, warn, fail]
+
+    CiPolicy:
+      type: object
+      required: [id, name, mode, failClosedOnIncompleteness, nonConstantSeverity]
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/PolicyId
+        name:
+          type: string
+        mode:
+          $ref: '#/components/schemas/PolicyMode'
+        failClosedOnIncompleteness:
+          type: boolean
+          description: Refuse certification / fail CI when incompleteness present (BR-3).
+        nonConstantSeverity:
+          $ref: '#/components/schemas/NonConstantSeverity'
+        exceptionNotes:
+          type: array
+          items:
+            type: string
+          description: Dual-note approved exceptions for non-constant gas.
+        updatedAt:
+          type: string
+          format: date-time
+
+    CiPolicyUpsert:
+      type: object
+      required: [name, mode, failClosedOnIncompleteness, nonConstantSeverity]
+      properties:
+        name:
+          type: string
+        mode:
+          $ref: '#/components/schemas/PolicyMode'
+        failClosedOnIncompleteness:
+          type: boolean
+        nonConstantSeverity:
+          $ref: '#/components/schemas/NonConstantSeverity'
+        exceptionNotes:
+          type: array
+          items:
+            type: string
+
+    CiPolicyGateResult:
+      type: object
+      required: [buildId, passed, mode]
+      properties:
+        buildId:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+        policyId:
+          $ref: ./common/primitives.yaml#/components/schemas/PolicyId
+        passed:
+          type: boolean
+        mode:
+          $ref: '#/components/schemas/PolicyMode'
+        violations:
+          type: array
+          items:
+            type: object
+            required: [code, message]
+            properties:
+              code:
+                type: string
+                enum: [non_constant_gas, incompleteness, cfg_incomplete]
+              message:
+                type: string
+              functionId:
+                $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+
+    CiPolicyListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CiPolicy'
+        nextCursor:
+          type: string
+
+    CiPolicyResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CiPolicy'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    CiPolicyListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CiPolicyListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    CiPolicyGateResultResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/CiPolicyGateResult'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

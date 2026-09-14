@@ -1,0 +1,18 @@
+{
+  "name": "@ceilgas/openapi-core",
+  "version": "0.1.0",
+  "private": true,
+  "description": "OpenAPI contracts for Ceilgas (common + identity + product domains)",
+  "scripts": {
+    "lint:domains": "redocly lint",
+    "bundle:domains": "mkdir -p src/.bundled && redocly bundle identity --output src/.bundled/identity.openapi.yaml && redocly bundle identity --output src/.bundled/identity.json && redocly bundle builds --output src/.bundled/builds.openapi.yaml && redocly bundle builds --output src/.bundled/builds.json && redocly bundle functions --output src/.bundled/functions.openapi.yaml && redocly bundle functions --output src/.bundled/functions.json && redocly bundle bounds --output src/.bundled/bounds.openapi.yaml && redocly bundle bounds --output src/.bundled/bounds.json && redocly bundle certificates --output src/.bundled/certificates.openapi.yaml && redocly bundle certificates --output src/.bundled/certificates.json && redocly bundle recommendations --output src/.bundled/recommendations.openapi.yaml && redocly bundle recommendations --output src/.bundled/recommendations.json && redocly bundle monitors --output src/.bundled/monitors.openapi.yaml && redocly bundle monitors --output src/.bundled/monitors.json && redocly bundle policies --output src/.bundled/policies.openapi.yaml && redocly bundle policies --output src/.bundled/policies.json && redocly bundle griefing --output src/.bundled/griefing.openapi.yaml && redocly bundle griefing --output src/.bundled/griefing.json",
+    "lint": "pnpm run lint:domains",
+    "bundle": "pnpm run bundle:domains"
+  },
+  "devDependencies": {
+    "@redocly/cli": "^1.34.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

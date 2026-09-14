@@ -1,0 +1,75 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Functions API
+  version: 0.1.0
+  description: Public functions discovered from a contract build, with size metrics.
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: fnc
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+security:
+  - apiKey: []
+tags:
+  - name: Functions
+    description: Public functions and size metrics
+paths:
+  /v1/builds/{buildId}/functions:
+    parameters:
+      - name: buildId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+    get:
+      operationId: listFunctions
+      tags: [Functions]
+      summary: List public functions for a build
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Functions page
+          content:
+            application/json:
+              schema:
+                $ref: ./functions.schemas.yaml#/components/schemas/PublicFunctionListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/functions/{functionId}:
+    parameters:
+      - name: functionId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+    get:
+      operationId: getFunction
+      tags: [Functions]
+      summary: Get a public function
+      responses:
+        '200':
+          description: Public function
+          content:
+            application/json:
+              schema:
+                $ref: ./functions.schemas.yaml#/components/schemas/PublicFunctionResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

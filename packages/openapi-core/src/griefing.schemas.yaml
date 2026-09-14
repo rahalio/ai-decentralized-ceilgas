@@ -1,0 +1,80 @@
+openapi: 3.1.0
+info:
+  title: Griefing schemas
+  version: 0.1.0
+  description: Role-gated adversarial griefing-cost estimates (BR-11).
+paths: {}
+components:
+  schemas:
+    GriefingEstimate:
+      type: object
+      required:
+        - id
+        - functionId
+        - estimatedCostWei
+        - labelledAdversarial
+        - createdAt
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/GriefingEstimateId
+        functionId:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+        estimatedCostWei:
+          type: string
+          description: Decimal string wei cost estimate — never IEEE float.
+        assumptions:
+          type: object
+          additionalProperties:
+            type: number
+        labelledAdversarial:
+          type: boolean
+          description: Always true — estimates must be labelled adversarial analytics (BR-11).
+        notes:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        createdByUserId:
+          $ref: ./common/primitives.yaml#/components/schemas/UserId
+
+    GriefingEstimateCreate:
+      type: object
+      required: [functionId]
+      properties:
+        functionId:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+        assumptions:
+          type: object
+          additionalProperties:
+            type: number
+        notes:
+          type: string
+
+    GriefingEstimateListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GriefingEstimate'
+        nextCursor:
+          type: string
+
+    GriefingEstimateResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/GriefingEstimate'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    GriefingEstimateListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/GriefingEstimateListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

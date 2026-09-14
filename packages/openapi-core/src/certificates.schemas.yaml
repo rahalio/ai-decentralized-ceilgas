@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: Certificates schemas
+  version: 0.1.0
+  description: Gas certificates binding bytecode, analyser, schedule, and assumptions.
+paths: {}
+components:
+  schemas:
+    CertificateStatus:
+      type: string
+      enum: [certified, partial, refused]
+
+    AssumptionSnapshot:
+      type: object
+      additionalProperties:
+        type: number
+      description: Size-assumption set bound into the certificate (BR-7).
+
+    GasCertificate:
+      type: object
+      required:
+        - id
+        - buildId
+        - status
+        - bytecodeHash
+        - analyserVersion
+        - gasScheduleVersion
+        - issuedAt
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/CertificateId
+        buildId:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+        bytecodeHash:
+          type: string
+        analyserVersion:
+          type: string
+        gasScheduleVersion:
+          type: string
+        status:
+          $ref: '#/components/schemas/CertificateStatus'
+        assumptions:
+          $ref: '#/components/schemas/AssumptionSnapshot'
+        refusedReason:
+          type: string
+          description: Present when status is refused (fail-closed incompleteness).
+        incompleteFunctionIds:
+          type: array
+          items:
+            $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+        issuedAt:
+          type: string
+          format: date-time
+
+    GasCertificateCreate:
+      type: object
+      required: [buildId]
+      properties:
+        buildId:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+        failClosed:
+          type: boolean
+          default: true
+          description: Refuse certificate when any function is incomplete (BR-3).
+        assumptions:
+          $ref: '#/components/schemas/AssumptionSnapshot'
+
+    GasCertificateListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GasCertificate'
+        nextCursor:
+          type: string
+
+    GasCertificateResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/GasCertificate'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    GasCertificateListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/GasCertificateListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

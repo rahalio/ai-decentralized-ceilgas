@@ -1,0 +1,85 @@
+openapi: 3.1.0
+info:
+  title: Recommendations schemas
+  version: 0.1.0
+  description: Limit recommendations under size assumptions (incl. oracle stipends).
+paths: {}
+components:
+  schemas:
+    AssumptionSet:
+      type: object
+      additionalProperties:
+        type: number
+      description: Size assumptions S for evaluating parametric bounds (BR-5).
+
+    LimitRecommendation:
+      type: object
+      required: [id, functionId, recommendedGasLimit, sound]
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/RecommendationId
+        functionId:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+        recommendedGasLimit:
+          type: integer
+          minimum: 0
+          description: Minimum gas to safely execute F under assumptions S.
+        assumptions:
+          $ref: '#/components/schemas/AssumptionSet'
+        sound:
+          type: boolean
+          description: False when bound incomplete — certification mode must not treat as safe.
+        callbackContext:
+          type: boolean
+          description: True when recommendation is an oracle/callback stipend (BR-6).
+        safetyMarginPercent:
+          type: number
+          minimum: 0
+        createdAt:
+          type: string
+          format: date-time
+
+    LimitRecommendationCreate:
+      type: object
+      required: [functionId, assumptions]
+      properties:
+        functionId:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+        assumptions:
+          $ref: '#/components/schemas/AssumptionSet'
+        callbackContext:
+          type: boolean
+          default: false
+        safetyMarginPercent:
+          type: number
+          minimum: 0
+          default: 0
+
+    LimitRecommendationListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/LimitRecommendation'
+        nextCursor:
+          type: string
+
+    LimitRecommendationResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/LimitRecommendation'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    LimitRecommendationListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/LimitRecommendationListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

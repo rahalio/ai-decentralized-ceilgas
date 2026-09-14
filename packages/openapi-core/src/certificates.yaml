@@ -1,0 +1,100 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Certificates API
+  version: 0.1.0
+  description: |
+    Gas certificates bind bytecode hash, analyser version, EVM gas-schedule version,
+    and assumption set for reproducibility (BR-7, BR-9). Distinct from optimisation hints (BR-10).
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: crt
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+security:
+  - apiKey: []
+tags:
+  - name: Certificates
+    description: Gas certificates
+paths:
+  /v1/certificates:
+    get:
+      operationId: listGasCertificates
+      tags: [Certificates]
+      summary: List gas certificates
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+        - name: buildId
+          in: query
+          schema:
+            $ref: ./common/primitives.yaml#/components/schemas/BuildId
+      responses:
+        '200':
+          description: Certificates page
+          content:
+            application/json:
+              schema:
+                $ref: ./certificates.schemas.yaml#/components/schemas/GasCertificateListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: issueGasCertificate
+      tags: [Certificates]
+      summary: Issue a gas certificate for a build
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./certificates.schemas.yaml#/components/schemas/GasCertificateCreate
+      responses:
+        '201':
+          description: Certificate issued
+          content:
+            application/json:
+              schema:
+                $ref: ./certificates.schemas.yaml#/components/schemas/GasCertificateResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '422':
+          $ref: ./common/responses.yaml#/components/responses/UnprocessableEntity
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/certificates/{certificateId}:
+    parameters:
+      - name: certificateId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/CertificateId
+    get:
+      operationId: getGasCertificate
+      tags: [Certificates]
+      summary: Get a gas certificate
+      responses:
+        '200':
+          description: Certificate
+          content:
+            application/json:
+              schema:
+                $ref: ./certificates.schemas.yaml#/components/schemas/GasCertificateResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

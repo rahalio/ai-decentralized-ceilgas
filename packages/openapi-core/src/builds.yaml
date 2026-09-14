@@ -1,0 +1,97 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Builds API
+  version: 0.1.0
+  description: |
+    Contract ingestion and CFG analysis jobs.
+    Submit bytecode/source, track analysis progress, pin analyser and gas-schedule versions.
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: bld
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+    description: Local / product API
+security:
+  - apiKey: []
+tags:
+  - name: Builds
+    description: Contract builds and CFG analysis
+paths:
+  /v1/builds:
+    get:
+      operationId: listBuilds
+      tags: [Builds]
+      summary: List contract builds
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Builds page
+          content:
+            application/json:
+              schema:
+                $ref: ./builds.schemas.yaml#/components/schemas/ContractBuildListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: submitBuild
+      tags: [Builds]
+      summary: Submit a contract build for analysis
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./builds.schemas.yaml#/components/schemas/ContractBuildCreate
+      responses:
+        '202':
+          description: Build accepted for analysis
+          content:
+            application/json:
+              schema:
+                $ref: ./builds.schemas.yaml#/components/schemas/ContractBuildResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '409':
+          $ref: ./common/responses.yaml#/components/responses/Conflict
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/builds/{buildId}:
+    parameters:
+      - name: buildId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+    get:
+      operationId: getBuild
+      tags: [Builds]
+      summary: Get a contract build
+      responses:
+        '200':
+          description: Build
+          content:
+            application/json:
+              schema:
+                $ref: ./builds.schemas.yaml#/components/schemas/ContractBuildResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

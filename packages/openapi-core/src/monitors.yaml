@@ -1,0 +1,95 @@
+openapi: 3.1.0
+info:
+  title: Ceilgas Monitors API
+  version: 0.1.0
+  description: Assumption breach monitors comparing live chain metrics to certificate assumptions.
+  license:
+    name: Proprietary
+    url: https://ceilgas.local/license
+  x-domain: mon
+  x-product: ceilgas
+servers:
+  - url: https://api.ceilgas.local
+security:
+  - apiKey: []
+tags:
+  - name: Monitors
+    description: Assumption breach monitors
+paths:
+  /v1/monitors:
+    get:
+      operationId: listMonitors
+      tags: [Monitors]
+      summary: List assumption monitors
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Monitors page
+          content:
+            application/json:
+              schema:
+                $ref: ./monitors.schemas.yaml#/components/schemas/AssumptionMonitorListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+    post:
+      operationId: createMonitor
+      tags: [Monitors]
+      summary: Create an assumption monitor
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/IdempotencyKey
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: ./monitors.schemas.yaml#/components/schemas/AssumptionMonitorCreate
+      responses:
+        '201':
+          description: Monitor created
+          content:
+            application/json:
+              schema:
+                $ref: ./monitors.schemas.yaml#/components/schemas/AssumptionMonitorResponse
+        '400':
+          $ref: ./common/responses.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+  /v1/monitors/{monitorId}/alerts:
+    parameters:
+      - name: monitorId
+        in: path
+        required: true
+        schema:
+          $ref: ./common/primitives.yaml#/components/schemas/MonitorId
+    get:
+      operationId: listMonitorAlerts
+      tags: [Monitors]
+      summary: List alerts for a monitor
+      parameters:
+        - $ref: ./common/parameters.yaml#/components/parameters/Cursor
+        - $ref: ./common/parameters.yaml#/components/parameters/Limit
+      responses:
+        '200':
+          description: Alerts page
+          content:
+            application/json:
+              schema:
+                $ref: ./monitors.schemas.yaml#/components/schemas/MonitorAlertListResponse
+        '401':
+          $ref: ./common/responses.yaml#/components/responses/Unauthorized
+        '404':
+          $ref: ./common/responses.yaml#/components/responses/NotFound
+        default:
+          $ref: ./common/responses.yaml#/components/responses/Problem
+
+components:
+  securitySchemes:
+    apiKey:
+      $ref: ./common/security.yaml#/components/securitySchemes/apiKey

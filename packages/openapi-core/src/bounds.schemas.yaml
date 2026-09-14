@@ -1,0 +1,82 @@
+openapi: 3.1.0
+info:
+  title: Bounds schemas
+  version: 0.1.0
+  description: Opcode and memory gas upper bounds with typed incompleteness.
+paths: {}
+components:
+  schemas:
+    IncompletenessClass:
+      type: string
+      description: |
+        Typed incompleteness — never a silent under-estimate as safe (BR-1, BR-3).
+        dont_know covers residual “don’t-know” solver outcomes from Gastap taxonomy.
+      enum:
+        - none
+        - dont_know
+        - maximization
+        - ranking_function
+        - cover_point
+        - timeout
+
+    BoundStatus:
+      type: string
+      enum: [proven, incomplete]
+
+    GasBound:
+      type: object
+      required: [id, functionId, status, incompletenessClass]
+      properties:
+        id:
+          $ref: ./common/primitives.yaml#/components/schemas/BoundId
+        functionId:
+          $ref: ./common/primitives.yaml#/components/schemas/FunctionId
+        buildId:
+          $ref: ./common/primitives.yaml#/components/schemas/BuildId
+        status:
+          $ref: '#/components/schemas/BoundStatus'
+        opcodeBoundFormula:
+          type: string
+          description: Constant or parametric opcode gas upper bound formula.
+        memoryBoundFormula:
+          type: string
+          description: Constant or parametric memory gas upper bound formula.
+        incompletenessClass:
+          $ref: '#/components/schemas/IncompletenessClass'
+        residualRiskNote:
+          type: string
+        nonConstantPolicyFlag:
+          type: boolean
+          description: True when gas is non-constant vs Ethereum safety guidance (BR-8).
+        analysedAt:
+          type: string
+          format: date-time
+
+    GasBoundListData:
+      type: object
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/GasBound'
+        nextCursor:
+          type: string
+
+    GasBoundResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/GasBound'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta
+
+    GasBoundListResponse:
+      type: object
+      required: [data]
+      properties:
+        data:
+          $ref: '#/components/schemas/GasBoundListData'
+        meta:
+          $ref: ./common/envelopes.yaml#/components/schemas/ResponseMeta

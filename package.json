@@ -1,0 +1,35 @@
+{
+  "name": "ceilgas",
+  "version": "0.1.0",
+  "description": "Ceilgas — sound Ethereum gas upper-bound certification (OpenAPI-first DDD)",
+  "private": true,
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:openapi": "pnpm --filter @ceilgas/openapi-core lint:domains",
+    "bundle:openapi": "pnpm --filter @ceilgas/openapi-core bundle:domains",
+    "build": "pnpm --filter @ceilgas/core build && pnpm --filter @ceilgas/services build && pnpm --filter @ceilgas/adapters build && pnpm --filter @ceilgas/api-server build",
+    "dev:api": "pnpm --filter @ceilgas/api-server dev",
+    "codegen:core": "node scripts/sync-codegen-paths.mjs && PYTHONPATH=.codegen/codegen/src python3 -m zero_codegen.cli.main generate --all --layers core --config .codegen/.zero-codegen-merged.json --skip-build",
+    "codegen:identity": "node scripts/sync-codegen-paths.mjs && PYTHONPATH=.codegen/codegen/src python3 -m zero_codegen.cli.main generate --domain identity --config .codegen/.zero-codegen-merged.json --skip-build",
+    "codegen:paths": "node scripts/sync-codegen-paths.mjs",
+    "dev:web": "pnpm --filter @ceilgas/webapp dev"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@types/node": "^20.0.0",
+    "eslint": "^9.0.0",
+    "prettier": "^3.8.1",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.55.0"
+  },
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=9.0.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "esbuild"
+    ]
+  }
+}
